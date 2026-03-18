@@ -1,40 +1,32 @@
-const express = require('express');
-const http = require('http');
-const app = express();
-const server = http.createServer(app);
-const io = require('socket.io')(server, {
-    cors: { origin: "*" }
+const io = require('socket.io')(3000, {
+    cors: { origin: "*" },
+    host: '0.0.0.0'
 });
 
-// הגדרת פורט דינמי עבור הענן
-const PORT = process.env.PORT || 3000;
-
-console.log("Starting Executive Chat Server...");
+console.log("server is running");
 
 io.on('connection', (socket) => {
-    console.log("New connection identified: " + socket.id);
+    // בלוג של המחשב שלך תראה את ה-ID של מי שהתחבר
+    console.log("identify connection, new user: " + socket.id);
 
     socket.on('new_message', (messageData) => {
-        // בטרמינל של השרת אתה תראה הכל (זהוב/שחור)
-        console.log(`[LOG] Real Name: ${messageData.userName || 'Unknown'} | Msg: ${messageData.text}`);
+        // --- החלק שרק אתה רואה (בטרמינל של ה-VS Code) ---
+        // כאן נדפיס את השם האמיתי ואת ה-ID
+        console.log(`[LOG] messeage from: ${messageData.userName || 'unknow'} (ID: ${socket.id}): ${messageData.text}`);
 
-        // יצירת אובייקט אנונימי לשאר המשתמשים
+        // 1. שליחה לכולם כהודעה אנונימית (מוחקים פרטים מזהים)
+        // אנחנו בונים אובייקט חדש שבו השם תמיד יהיה "משתמש אנונימי"
         const anonymousData = { 
             text: messageData.text, 
-            userName: "Anonymous User",
-            isMe: false 
+            userName: "anunimus user",
+            isMe: false // זה יעזור לאפליקציה בצד השני לעצב את הבועה
         };
 
-        // שליחה לכולם חוץ מהשולח
+        // broadcast שולח לכל המשתמשים חוץ מזה ששלח את ההודעה
         socket.broadcast.emit('receive_message', anonymousData);
     });
 
     socket.on('disconnect', () => {
-        console.log("User disconnected: " + socket.id);
+        console.log("user logout: " + socket.id);
     });
-});
-
-// הפעלת השרת
-server.listen(PORT, () => {
-    console.log(`Server is live on port ${PORT}`);
 });
